@@ -13,13 +13,10 @@ public class InspectionProcessorFunction
     }
 
     [Function("InspectionProcessor")]
-    public void Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer)
+    public void Run(
+        [QueueTrigger("%InspectionQueueName%", Connection = "StorageConnectionString")]
+        string message)
     {
-        _logger.LogInformation("InspectionProcessor timer fired at: {time}", DateTimeOffset.Now);
-
-        if (timer.ScheduleStatus is not null)
-        {
-            _logger.LogInformation("Next timer schedule at: {next}", timer.ScheduleStatus.Next);
-        }
+        _logger.LogInformation("InspectionProcessor queue message received: {message}", message);
     }
 }
