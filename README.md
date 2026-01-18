@@ -37,3 +37,25 @@ Remove the mapping when done:
 ```powershell
 subst /d X:
 ```
+# Smoke Testing
+
+
+
+PowerShell (Invoke-RestMethod):
+```powershell
+$body = @{
+  sessionId = "abc123"
+  name = "Test"
+  userId = "67fa3235-a5a4-40d7-b3f1-760983772605"
+  queryParams = @{ foo = "bar"; priority = "high" }
+} | ConvertTo-Json
+```
+
+Invoke a remote  call for testing
+```
+Invoke-RestMethod "https://react-receiver.icysmoke-6c3b2e19.centralus.azurecontainerapps.io/QHVAC/ReceiveInspection/" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+
+```
