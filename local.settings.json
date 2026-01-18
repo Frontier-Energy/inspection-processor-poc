@@ -1,9 +1,11 @@
 {
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "InspectionQueueName": "processor",
-    "StorageConnectionString": "DefaultEndpointsProtocol=https;AccountName=receiverstorage;AccountKey=3JtcOx5BFrYbL6/DNIuSYhh/eIlrJPeiVLKlpEIIzmaylxhg7cE64bW6hU1KyIYD4QkeHbtkk5rt+AStgo4sTg==;EndpointSuffix=core.windows.net"
-  }
+    "IsEncrypted":  false,
+    "Values":  {
+                   "AzureWebJobsStorage":  "UseDevelopmentStorage=true",
+                   "FUNCTIONS_WORKER_RUNTIME":  "dotnet-isolated",
+                   "InspectionQueueName":  "processor",
+                   "StorageConnectionString":  "DefaultEndpointsProtocol=https;AccountName=receiverstorage;AccountKey=3JtcOx5BFrYbL6/DNIuSYhh/eIlrJPeiVLKlpEIIzmaylxhg7cE64bW6hU1KyIYD4QkeHbtkk5rt+AStgo4sTg==;EndpointSuffix=core.windows.net",
+                   "BlobStorageConnectionString":  "DefaultEndpointsProtocol=https;AccountName=receiverstorage;AccountKey=3JtcOx5BFrYbL6/DNIuSYhh/eIlrJPeiVLKlpEIIzmaylxhg7cE64bW6hU1KyIYD4QkeHbtkk5rt+AStgo4sTg==;EndpointSuffix=core.windows.net",
+                   "InspectionContainerName":  "raw-data"
+               }
 }

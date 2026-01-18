@@ -1,3 +1,15 @@
 {
-  "version": "2.0"
+  "version": "2.0",
+  "logging": {
+    "logLevel": {
+      "Default": "Warning",
+      "Host": "Warning",
+      "Function": "Warning"
+    }
+  },
+  "extensions": {
+    "queues": {
+      "messageEncoding": "None"
+    }
+  }
 }
