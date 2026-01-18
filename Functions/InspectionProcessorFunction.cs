@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Azure.Communication.Email;
 using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
@@ -11,12 +12,18 @@ public class InspectionProcessorFunction
     private readonly ILogger _logger;
     private readonly string _blobConnectionString;
     private readonly string _containerName;
+    private readonly string _emailConnectionString;
+    private readonly string _emailFrom;
+    private readonly string _emailTo;
 
     public InspectionProcessorFunction(ILoggerFactory loggerFactory, IConfiguration configuration)
     {
         _logger = loggerFactory.CreateLogger<InspectionProcessorFunction>();
         _blobConnectionString = configuration["BlobStorageConnectionString"] ?? string.Empty;
         _containerName = configuration["InspectionContainerName"] ?? string.Empty;
+        _emailConnectionString = configuration["AcsEmailConnectionString"] ?? string.Empty;
+        _emailFrom = configuration["AcsEmailFrom"] ?? string.Empty;
+        _emailTo = configuration["AcsEmailTo"] ?? string.Empty;
     }
 
     [Function("InspectionProcessor")]
@@ -59,6 +66,29 @@ public class InspectionProcessorFunction
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to read blob for SessionId {sessionId}.", payload.sessionId);
+            return;
+        }
+
+        if (_emailConnectionString.Length == 0 || _emailFrom.Length == 0 || _emailTo.Length == 0)
+        {
+            _logger.LogError("Email settings are missing. Set AcsEmailConnectionString, AcsEmailFrom, and AcsEmailTo.");
+            return;
+        }
+
+        try
+        {
+            var emailClient = new EmailClient(_emailConnectionString);
+            var content = new EmailContent($"Inspection payload for SessionId {payload.sessionId}")
+            {
+                PlainText = blobJson
+            };
+            var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
+            var emailMessage = new EmailMessage(_emailFrom, recipients, content);
+            await emailClient.SendAsync(Azure.WaitUntil.Completed, emailMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email for SessionId {sessionId}.", payload.sessionId);
             return;
         }
 

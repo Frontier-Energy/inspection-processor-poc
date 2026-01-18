@@ -6,6 +6,9 @@
                    "InspectionQueueName":  "processor",
                    "StorageConnectionString":  "DefaultEndpointsProtocol=https;AccountName=receiverstorage;AccountKey=3JtcOx5BFrYbL6/DNIuSYhh/eIlrJPeiVLKlpEIIzmaylxhg7cE64bW6hU1KyIYD4QkeHbtkk5rt+AStgo4sTg==;EndpointSuffix=core.windows.net",
                    "BlobStorageConnectionString":  "DefaultEndpointsProtocol=https;AccountName=receiverstorage;AccountKey=3JtcOx5BFrYbL6/DNIuSYhh/eIlrJPeiVLKlpEIIzmaylxhg7cE64bW6hU1KyIYD4QkeHbtkk5rt+AStgo4sTg==;EndpointSuffix=core.windows.net",
-                   "InspectionContainerName":  "raw-data"
+                   "InspectionContainerName":  "raw-data",
+                   "AcsEmailConnectionString":  "endpoint=https://react-sender.unitedstates.communication.azure.com/;accesskey=119ZF3iQ9JepdHEQVmdkGjVNKbRsuXknv8V3zeGIUz32EOy6FszhJQQJ99CAACULyCpGAcBoAAAAAZCSOsK5",
+                   "AcsEmailFrom":  "DoNotReply@ba51f10e-4465-433f-bab6-dce5ee10dbf5.azurecomm.net",
+                   "AcsEmailTo":  "jcavaliere@frontierenergy.com"
                }
 }
