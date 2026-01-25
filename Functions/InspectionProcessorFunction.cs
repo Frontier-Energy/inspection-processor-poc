@@ -1,5 +1,4 @@
 using System.Text.Json;
-using InspectionProcessor.Services;
 using Azure.Communication.Email;
 using Azure.Storage.Blobs;
 using InspectionProcessor.Services;
@@ -66,6 +65,7 @@ public class InspectionProcessorFunction
 
 
         GetInspectionResponse inspection = null!;
+        UserModel? user = null;
 
         try
         {
@@ -77,6 +77,19 @@ public class InspectionProcessorFunction
         {
             _logger.LogError(ex, "Failed to load inspection from API for SessionId {sessionId}.", payload.sessionId);
             return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(inspection.UserId))
+        {
+            try
+            {
+                var userResponse = await _inspectionApiClient.GetUserAsync(inspection.UserId, cancellationToken);
+                user = userResponse.User;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load user info for UserId {userId}.", inspection.UserId);
+            }
         }
 
         string inspectionJson = JsonSerializer.Serialize(inspection);
@@ -92,7 +105,7 @@ public class InspectionProcessorFunction
             var emailClient = new EmailClient(_emailConnectionString);
             var content = new EmailContent($"Inspection payload for SessionId {payload.sessionId}")
             {
-                Html = _emailRenderer.RenderHtml(inspection)
+                Html = _emailRenderer.RenderHtml(inspection, user)
             };
             var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
             var emailMessage = new EmailMessage(_emailFrom, recipients, content);

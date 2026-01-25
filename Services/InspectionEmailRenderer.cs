@@ -5,7 +5,7 @@ namespace InspectionProcessor.Services;
 
 public sealed class InspectionEmailRenderer
 {
-    public string RenderHtml(GetInspectionResponse inspection)
+    public string RenderHtml(GetInspectionResponse inspection, UserModel? user)
     {
         var builder = new StringBuilder();
         builder.AppendLine("<!doctype html>");
@@ -15,7 +15,7 @@ public sealed class InspectionEmailRenderer
         builder.AppendLine("<table style=\"border-collapse: collapse; width: 100%;\">");
 
         AppendRow(builder, "Session Id", inspection.SessionId);
-        AppendRow(builder, "User Id", inspection.UserId);
+        AppendUser(builder, user);
         AppendRow(builder, "Name", inspection.Name);
         AppendQueryParams(builder, inspection.QueryParams);
         AppendFiles(builder, inspection.Files);
@@ -85,6 +85,19 @@ public sealed class InspectionEmailRenderer
         inner.AppendLine("</table>");
 
         AppendHtmlRow(builder, "Files", inner.ToString());
+    }
+
+    private static void AppendUser(StringBuilder builder, UserModel? user)
+    {
+        if (user is null)
+        {
+            AppendRow(builder, "User", null);
+            return;
+        }
+
+        AppendRow(builder, "User Email", user.Email);
+        AppendRow(builder, "User First Name", user.FirstName);
+        AppendRow(builder, "User Last Name", user.LastName);
     }
 
     private static string HtmlEncode(string? value)

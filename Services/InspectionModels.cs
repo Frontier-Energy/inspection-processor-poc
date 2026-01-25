@@ -8,6 +8,17 @@ public sealed record GetInspectionResponse(
     List<InspectionFileReference>? Files
 );
 
+public sealed record GetUserRequest(string? UserId);
+
+public sealed record GetUserResponse(UserModel? User);
+
+public sealed record UserModel(
+    string? UserId,
+    string? Email,
+    string? FirstName,
+    string? LastName
+);
+
 public sealed record InspectionFileReference(
     string? FileName,
     string? SessionId,
