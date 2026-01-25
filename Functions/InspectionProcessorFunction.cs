@@ -1,4 +1,5 @@
 using System.Text.Json;
+using InspectionProcessor.Services;
 using Azure.Communication.Email;
 using Azure.Storage.Blobs;
 using InspectionProcessor.Services;
@@ -17,6 +18,7 @@ public class InspectionProcessorFunction
     private readonly string _emailFrom;
     private readonly string _emailTo;
     private readonly IInspectionApiClient _inspectionApiClient;
+    private readonly InspectionEmailRenderer _emailRenderer;
 
     public InspectionProcessorFunction(
         ILoggerFactory loggerFactory,
@@ -30,6 +32,7 @@ public class InspectionProcessorFunction
         _emailFrom = configuration["AcsEmailFrom"] ?? string.Empty;
         _emailTo = configuration["AcsEmailTo"] ?? string.Empty;
         _inspectionApiClient = inspectionApiClient;
+        _emailRenderer = new InspectionEmailRenderer();
     }
 
     [Function("InspectionProcessor")]
@@ -89,7 +92,7 @@ public class InspectionProcessorFunction
             var emailClient = new EmailClient(_emailConnectionString);
             var content = new EmailContent($"Inspection payload for SessionId {payload.sessionId}")
             {
-                PlainText = inspectionJson
+                Html = _emailRenderer.RenderHtml(inspection)
             };
             var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
             var emailMessage = new EmailMessage(_emailFrom, recipients, content);
