@@ -4,6 +4,7 @@ using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using InspectionProcessor.Services;
 
 namespace InspectionProcessor.Functions;
 
@@ -15,8 +16,12 @@ public class InspectionProcessorFunction
     private readonly string _emailConnectionString;
     private readonly string _emailFrom;
     private readonly string _emailTo;
+    private readonly IInspectionApiClient _inspectionApiClient;
 
-    public InspectionProcessorFunction(ILoggerFactory loggerFactory, IConfiguration configuration)
+    public InspectionProcessorFunction(
+        ILoggerFactory loggerFactory,
+        IConfiguration configuration,
+        IInspectionApiClient inspectionApiClient)
     {
         _logger = loggerFactory.CreateLogger<InspectionProcessorFunction>();
         _blobConnectionString = configuration["BlobStorageConnectionString"] ?? string.Empty;
@@ -24,12 +29,14 @@ public class InspectionProcessorFunction
         _emailConnectionString = configuration["AcsEmailConnectionString"] ?? string.Empty;
         _emailFrom = configuration["AcsEmailFrom"] ?? string.Empty;
         _emailTo = configuration["AcsEmailTo"] ?? string.Empty;
+        _inspectionApiClient = inspectionApiClient;
     }
 
     [Function("InspectionProcessor")]
     public async Task Run(
         [QueueTrigger("%InspectionQueueName%", Connection = "StorageConnectionString")]
-        string message)
+        string message,
+        CancellationToken cancellationToken)
     {
         QueueMessage? payload = null;
 
@@ -53,6 +60,20 @@ public class InspectionProcessorFunction
             _logger.LogError("Blob settings are missing. Set BlobStorageConnectionString and InspectionContainerName.");
             return;
         }
+
+
+        try
+        {
+            var inspectionJson = await _inspectionApiClient.GetInspectionAsync(payload.sessionId, cancellationToken);
+            _logger.LogInformation("Loaded inspection from API for SessionId {sessionId}.", payload.sessionId);
+            _logger.LogInformation("Inspection payload: {payload}", inspectionJson);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load inspection from API for SessionId {sessionId}.", payload.sessionId);
+            return;
+        }
+
 
         var containerClient = new BlobContainerClient(_blobConnectionString, _containerName);
         var blobClient = containerClient.GetBlobClient(payload.sessionId + ".json");
@@ -92,24 +113,10 @@ public class InspectionProcessorFunction
             return;
         }
 
-        ReceiveInspectionRequest? request = null;
-        try
-        {
-            request = JsonSerializer.Deserialize<ReceiveInspectionRequest>(blobJson);
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Failed to deserialize blob payload for SessionId {sessionId}.", payload.sessionId);
-        }
+        
 
-        if (request is null)
-        {
-            _logger.LogWarning("Blob payload is empty or invalid for SessionId {sessionId}.", payload.sessionId);
-            return;
-        }
-
-        _logger.LogError("Loaded inspection request for SessionId {sessionId}.", payload.sessionId);
-        _logger.LogError("Payload: {payload}", JsonSerializer.Serialize(blobJson));
+        _logger.LogInformation("Loaded inspection request for SessionId {sessionId}.", payload.sessionId);
+        _logger.LogInformation("Payload: {payload}", JsonSerializer.Serialize(blobJson));
     }
 }
 
