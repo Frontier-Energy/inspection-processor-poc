@@ -108,7 +108,59 @@ public class InspectionProcessorFunction
                 Html = _emailRenderer.RenderHtml(inspection, user)
             };
             var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
+            List<EmailAttachment>? attachments = null;
+            if (inspection.Files is { Count: > 0 })
+            {
+                attachments = new List<EmailAttachment>();
+                foreach (var file in inspection.Files)
+                {
+                    if (string.IsNullOrWhiteSpace(file.FileName))
+                    {
+                        _logger.LogWarning("Inspection file missing FileName for SessionId {sessionId}.", payload.sessionId);
+                        continue;
+                    }
+
+                    var fileSessionId = string.IsNullOrWhiteSpace(file.SessionId) ? payload.sessionId : file.SessionId;
+                    if (string.IsNullOrWhiteSpace(fileSessionId))
+                    {
+                        _logger.LogWarning("Inspection file {fileName} missing SessionId.", file.FileName);
+                        continue;
+                    }
+
+                    try
+                    {
+                        var filePayload = await _inspectionApiClient.GetFileAsync(fileSessionId, file.FileName, cancellationToken);
+                        attachments.Add(new EmailAttachment(
+                            filePayload.FileName,
+                            filePayload.ContentType,
+                            BinaryData.FromBytes(filePayload.Content)));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "Failed to load file {fileName} for SessionId {sessionId}.",
+                            file.FileName,
+                            fileSessionId);
+                    }
+                }
+            }
+
             var emailMessage = new EmailMessage(_emailFrom, recipients, content);
+            if (attachments is { Count: > 0 })
+            {
+                if (emailMessage.Attachments is null)
+                {
+                    _logger.LogWarning("Email message attachments collection is not available.");
+                }
+                else
+                {
+                    foreach (var attachment in attachments)
+                    {
+                        emailMessage.Attachments.Add(attachment);
+                    }
+                }
+            }
             await emailClient.SendAsync(Azure.WaitUntil.Completed, emailMessage);
         }
         catch (Exception ex)

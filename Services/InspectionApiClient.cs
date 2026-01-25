@@ -8,6 +8,7 @@ public interface IInspectionApiClient
 {
     Task<GetInspectionResponse> GetInspectionAsync(string sessionId, CancellationToken cancellationToken);
     Task<GetUserResponse> GetUserAsync(string userId, CancellationToken cancellationToken);
+    Task<InspectionFilePayload> GetFileAsync(string sessionId, string fileName, CancellationToken cancellationToken);
 }
 
 public sealed class InspectionApiClient : IInspectionApiClient
@@ -85,5 +86,51 @@ public sealed class InspectionApiClient : IInspectionApiClient
         }
 
         return user;
+    }
+
+    public async Task<InspectionFilePayload> GetFileAsync(string sessionId, string fileName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_options.BaseUrl))
+        {
+            throw new InvalidOperationException("Inspection API base URL is missing. Set InspectionApi:BaseUrl.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new ArgumentException("SessionId is required to load inspection files.", nameof(sessionId));
+        }
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException("FileName is required to load inspection files.", nameof(fileName));
+        }
+
+        var path = string.IsNullOrWhiteSpace(_options.GetFilePath)
+            ? "QHVAC/GetFile"
+            : _options.GetFilePath;
+
+        var requestUri = $"{path}?sessionId={Uri.EscapeDataString(sessionId)}&fileName={Uri.EscapeDataString(fileName)}";
+        using var response = await _httpClient.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning(
+                "Inspection API returned {statusCode} for GetFile. Body: {body}",
+                response.StatusCode,
+                body);
+        }
+
+        response.EnsureSuccessStatusCode();
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var resolvedFileName = fileName;
+        var responseFileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName;
+        if (!string.IsNullOrWhiteSpace(responseFileName))
+        {
+            resolvedFileName = responseFileName.Trim('"');
+        }
+
+        return new InspectionFilePayload(resolvedFileName, contentType, content);
     }
 }

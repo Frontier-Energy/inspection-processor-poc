@@ -24,3 +24,9 @@ public sealed record InspectionFileReference(
     string? SessionId,
     string? FileType
 );
+
+public sealed record InspectionFilePayload(
+    string FileName,
+    string ContentType,
+    byte[] Content
+);
