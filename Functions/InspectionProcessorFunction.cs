@@ -15,7 +15,6 @@ public class InspectionProcessorFunction
     private readonly string _containerName;
     private readonly string _emailConnectionString;
     private readonly string _emailFrom;
-    private readonly string _emailTo;
     private readonly IInspectionApiClient _inspectionApiClient;
     private readonly InspectionEmailRenderer _emailRenderer;
 
@@ -29,7 +28,6 @@ public class InspectionProcessorFunction
         _containerName = configuration["InspectionContainerName"] ?? string.Empty;
         _emailConnectionString = configuration["AcsEmailConnectionString"] ?? string.Empty;
         _emailFrom = configuration["AcsEmailFrom"] ?? string.Empty;
-        _emailTo = configuration["AcsEmailTo"] ?? string.Empty;
         _inspectionApiClient = inspectionApiClient;
         _emailRenderer = new InspectionEmailRenderer();
     }
@@ -94,9 +92,17 @@ public class InspectionProcessorFunction
 
         string inspectionJson = JsonSerializer.Serialize(inspection);
        
-        if (_emailConnectionString.Length == 0 || _emailFrom.Length == 0 || _emailTo.Length == 0)
+        if (_emailConnectionString.Length == 0 || _emailFrom.Length == 0)
         {
-            _logger.LogError("Email settings are missing. Set AcsEmailConnectionString, AcsEmailFrom, and AcsEmailTo.");
+            _logger.LogError("Email settings are missing. Set AcsEmailConnectionString and AcsEmailFrom.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(user?.Email))
+        {
+            _logger.LogError(
+                "User email address is missing for SessionId {sessionId}.",
+                payload.sessionId);
             return;
         }
 
@@ -107,7 +113,7 @@ public class InspectionProcessorFunction
             {
                 Html = _emailRenderer.RenderHtml(inspection, user)
             };
-            var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
+            var recipients = new EmailRecipients(new[] { new EmailAddress(user.Email) });
             List<EmailAttachment>? attachments = null;
             if (inspection.Files is { Count: > 0 })
             {
