@@ -47,7 +47,7 @@ public sealed class InspectionEmailRenderer
     {
         if (queryParams is null || queryParams.Count == 0)
         {
-            AppendRow(builder, "Query Params", null);
+            AppendRow(builder, "Inspection Details", null);
             return;
         }
 
@@ -62,7 +62,7 @@ public sealed class InspectionEmailRenderer
         }
         inner.AppendLine("</table>");
 
-        AppendHtmlRow(builder, "Query Params", inner.ToString());
+        AppendHtmlRow(builder, "Inspection Details", inner.ToString());
     }
 
     private static void AppendFiles(StringBuilder builder, List<InspectionFileReference>? files)
