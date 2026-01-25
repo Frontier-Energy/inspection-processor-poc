@@ -62,9 +62,11 @@ public class InspectionProcessorFunction
         }
 
 
+        string inspectionJson = string.Empty;
+
         try
         {
-            var inspectionJson = await _inspectionApiClient.GetInspectionAsync(payload.sessionId, cancellationToken);
+            inspectionJson = await _inspectionApiClient.GetInspectionAsync(payload.sessionId, cancellationToken);
             _logger.LogInformation("Loaded inspection from API for SessionId {sessionId}.", payload.sessionId);
             _logger.LogInformation("Inspection payload: {payload}", inspectionJson);
         }
@@ -75,21 +77,7 @@ public class InspectionProcessorFunction
         }
 
 
-        var containerClient = new BlobContainerClient(_blobConnectionString, _containerName);
-        var blobClient = containerClient.GetBlobClient(payload.sessionId + ".json");
-
-        string blobJson;
-        try
-        {
-            var download = await blobClient.DownloadContentAsync();
-            blobJson = download.Value.Content.ToString();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to read blob for SessionId {sessionId}.", payload.sessionId);
-            return;
-        }
-
+       
         if (_emailConnectionString.Length == 0 || _emailFrom.Length == 0 || _emailTo.Length == 0)
         {
             _logger.LogError("Email settings are missing. Set AcsEmailConnectionString, AcsEmailFrom, and AcsEmailTo.");
@@ -101,7 +89,7 @@ public class InspectionProcessorFunction
             var emailClient = new EmailClient(_emailConnectionString);
             var content = new EmailContent($"Inspection payload for SessionId {payload.sessionId}")
             {
-                PlainText = blobJson
+                PlainText = inspectionJson
             };
             var recipients = new EmailRecipients(new[] { new EmailAddress(_emailTo) });
             var emailMessage = new EmailMessage(_emailFrom, recipients, content);
@@ -116,7 +104,7 @@ public class InspectionProcessorFunction
         
 
         _logger.LogInformation("Loaded inspection request for SessionId {sessionId}.", payload.sessionId);
-        _logger.LogInformation("Payload: {payload}", JsonSerializer.Serialize(blobJson));
+        _logger.LogInformation("Payload: {payload}", JsonSerializer.Serialize(inspectionJson));
     }
 }
 
