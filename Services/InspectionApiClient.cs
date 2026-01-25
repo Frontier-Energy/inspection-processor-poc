@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -5,7 +6,7 @@ namespace InspectionProcessor.Services;
 
 public interface IInspectionApiClient
 {
-    Task<string> GetInspectionAsync(string sessionId, CancellationToken cancellationToken);
+    Task<GetInspectionResponse> GetInspectionAsync(string sessionId, CancellationToken cancellationToken);
 }
 
 public sealed class InspectionApiClient : IInspectionApiClient
@@ -24,7 +25,7 @@ public sealed class InspectionApiClient : IInspectionApiClient
         _logger = logger;
     }
 
-    public async Task<string> GetInspectionAsync(string sessionId, CancellationToken cancellationToken)
+    public async Task<GetInspectionResponse> GetInspectionAsync(string sessionId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_options.BaseUrl))
         {
@@ -47,6 +48,12 @@ public sealed class InspectionApiClient : IInspectionApiClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(cancellationToken);
+        var inspection = await response.Content.ReadFromJsonAsync<GetInspectionResponse>(cancellationToken: cancellationToken);
+        if (inspection is null)
+        {
+            throw new InvalidOperationException("Inspection API returned an empty response.");
+        }
+
+        return inspection;
     }
 }

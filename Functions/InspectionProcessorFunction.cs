@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Azure.Communication.Email;
 using Azure.Storage.Blobs;
+using InspectionProcessor.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using InspectionProcessor.Services;
 
 namespace InspectionProcessor.Functions;
 
@@ -62,13 +62,13 @@ public class InspectionProcessorFunction
         }
 
 
-        string inspectionJson = string.Empty;
+        GetInspectionResponse inspection = null!;
 
         try
         {
-            inspectionJson = await _inspectionApiClient.GetInspectionAsync(payload.sessionId, cancellationToken);
+            inspection = await _inspectionApiClient.GetInspectionAsync(payload.sessionId, cancellationToken);
+          
             _logger.LogInformation("Loaded inspection from API for SessionId {sessionId}.", payload.sessionId);
-            _logger.LogInformation("Inspection payload: {payload}", inspectionJson);
         }
         catch (Exception ex)
         {
@@ -76,7 +76,7 @@ public class InspectionProcessorFunction
             return;
         }
 
-
+        string inspectionJson = JsonSerializer.Serialize(inspection);
        
         if (_emailConnectionString.Length == 0 || _emailFrom.Length == 0 || _emailTo.Length == 0)
         {
@@ -104,7 +104,7 @@ public class InspectionProcessorFunction
         
 
         _logger.LogInformation("Loaded inspection request for SessionId {sessionId}.", payload.sessionId);
-        _logger.LogInformation("Payload: {payload}", JsonSerializer.Serialize(inspectionJson));
+        _logger.LogInformation("Payload: {payload}", inspectionJson);
     }
 }
 
