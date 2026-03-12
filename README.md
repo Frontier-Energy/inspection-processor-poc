@@ -6,12 +6,23 @@
 
 ## Restore
 ```powershell
-dotnet restore
+$env:DOTNET_CLI_HOME = (Resolve-Path '.\.dotnet').Path
+$env:NUGET_PACKAGES = 'C:\Users\JasonCavaliere\.codex\memories\nuget-packages'
+dotnet restore inspection-processor-poc.sln
 ```
 
 ## Build
 ```powershell
-dotnet build
+$env:DOTNET_CLI_HOME = (Resolve-Path '.\.dotnet').Path
+$env:NUGET_PACKAGES = 'C:\Users\JasonCavaliere\.codex\memories\nuget-packages'
+dotnet build inspection-processor-poc.sln -nologo
+```
+
+## Test
+```powershell
+$env:DOTNET_CLI_HOME = (Resolve-Path '.\.dotnet').Path
+$env:NUGET_PACKAGES = 'C:\Users\JasonCavaliere\.codex\memories\nuget-packages'
+dotnet test inspection-processor-poc.sln -nologo
 ```
 
 ## Run locally
