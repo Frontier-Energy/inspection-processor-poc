@@ -3,7 +3,12 @@ using System.Text;
 
 namespace InspectionProcessor.Services;
 
-public sealed class InspectionEmailRenderer
+public interface IInspectionEmailRenderer
+{
+    string RenderHtml(GetInspectionResponse inspection, UserModel? user);
+}
+
+public sealed class InspectionEmailRenderer : IInspectionEmailRenderer
 {
     public string RenderHtml(GetInspectionResponse inspection, UserModel? user)
     {
